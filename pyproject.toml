@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "zenchain-testnet-farmer"
+version = "0.1.0"
+description = ""
+authors = ["hachimaru <74972395+xxspell@users.noreply.github.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+sqlalchemy = "^2.0.36"
+loguru = "^0.7.2"
+pydantic = "^2.10.3"
+pydantic-settings = "^2.6.1"
+web3 = "^7.6.0"
+eth-account = "^0.13.4"
+aiosqlite = "^0.20.0"
+alembic = "^1.14.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
