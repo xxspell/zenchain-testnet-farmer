@@ -16,6 +16,7 @@ web3 = "^7.6.0"
 eth-account = "^0.13.4"
 aiosqlite = "^0.20.0"
 alembic = "^1.14.0"
+browserforge = {extras = ["all"], version = "^1.1.2"}
 
 
 [build-system]

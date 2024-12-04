@@ -1,9 +1,19 @@
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
 class EnvSettings(BaseSettings):
+    console_log: str = "INFO"
 
+    @field_validator('console_log')
+    def validate_console_log(cls, value):
+        value.upper()
+        valid_types = ["INFO", "DEBUG", "WARNING"]
+
+        if value not in valid_types:
+            raise ValueError(f"Invalid console log type message: '{value}'. Must be one of: {', '.join(valid_types)}")
+        return value
 
 
     class Config:

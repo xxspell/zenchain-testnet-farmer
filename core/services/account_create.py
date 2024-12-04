@@ -6,6 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.exc import IntegrityError
 
+from browserforge.headers import HeaderGenerator
+
 from core.database.connect import AsyncSessionLocal
 from core.database.models import Account
 from core.utils.log import xlogger
@@ -24,6 +26,7 @@ class AccountCreationResult:
 
 async def create_accounts(account_data_file: str, proxy_file: str) -> AccountCreationResult:
     result = AccountCreationResult()
+    headers = HeaderGenerator(device='desktop')
 
     try:
         proxies = []
@@ -94,13 +97,14 @@ async def create_accounts(account_data_file: str, proxy_file: str) -> AccountCre
                                 continue
 
                         proxy = proxies[proxy_index] if proxies and proxy_index < len(proxies) else None
-
+                        headers_account = headers.generate()
                         new_account = Account(
                             email=email,
                             private_key=private_key,
                             proxy=proxy,
                             active=True,
-                            address=address
+                            address=address,
+                            headers=headers_account,
                         )
 
                         session.add(new_account)
