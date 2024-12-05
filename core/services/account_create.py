@@ -48,7 +48,9 @@ async def create_accounts(account_data_file: str, proxy_file: str) -> AccountCre
 
                     if len(row) < 2:
                         result.skipped_accounts += 1
-                        result.skipped_details.append(f"Invalid row format: {row}")
+                        message = f"Invalid row format: {row}"
+                        xlogger.error(message)
+                        result.skipped_details.append(message)
                         continue
 
 
@@ -64,7 +66,9 @@ async def create_accounts(account_data_file: str, proxy_file: str) -> AccountCre
 
                         if not address:
                             result.skipped_accounts += 1
-                            result.skipped_details.append(f"Invalid private key for {email}")
+                            message = f"Invalid private key for {email}"
+                            xlogger.error(message)
+                            result.skipped_details.append(message)
                             continue
 
 
@@ -81,18 +85,18 @@ async def create_accounts(account_data_file: str, proxy_file: str) -> AccountCre
 
                             if existing_account.email == email and existing_account.private_key != private_key:
                                 result.duplicates += 1
-                                result.skipped_details.append(
-                                    f"Duplicate email {email}. Existing private key differs."
-                                )
+                                message = f"Duplicate email {email}. Existing private key differs."
+                                xlogger.error(message)
+                                result.skipped_details.append(message)
                                 result.skipped_accounts += 1
                                 continue
 
                             if existing_account.private_key == private_key:
 
                                 result.duplicates += 1
-                                result.skipped_details.append(
-                                    f"Account {email} already exists."
-                                )
+                                message = f"Account {email} already exists."
+                                xlogger.error(message)
+                                result.skipped_details.append(message)
                                 result.skipped_accounts += 1
                                 continue
 
@@ -114,21 +118,27 @@ async def create_accounts(account_data_file: str, proxy_file: str) -> AccountCre
                         result.added_accounts += 1
 
                     except Exception as account_error:
-                        result.errors.append(f"Error processing {email}: {str(account_error)}")
+                        message = f"Error processing {email}: {str(account_error)}"
+                        xlogger.error(message)
+                        result.errors.append(message)
                         result.skipped_accounts += 1
 
                 await session.commit()
 
     except FileNotFoundError:
-        result.errors.append(f"File not found: {account_data_file} or {proxy_file}")
+        message = f"File not found: {account_data_file} or {proxy_file}"
+        xlogger.error(message)
+        result.errors.append(message)
     except Exception as e:
-        result.errors.append(f"Unexpected error: {str(e)}")
+        message = f"Unexpected error: {str(e)}"
+        xlogger.error(message)
+        result.errors.append(message)
 
     return result
 
 
 def print_account_creation_report(result: AccountCreationResult):
-    print("\n--- Account Creation Report ---")
+    print("\n\n--- Account Creation Report ---")
     print(f"Total accounts processed: {result.total_accounts}")
     print(f"Successfully added: {result.added_accounts}")
     print(f"Skipped accounts: {result.skipped_accounts}")

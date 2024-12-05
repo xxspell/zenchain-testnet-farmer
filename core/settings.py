@@ -6,6 +6,9 @@ from functools import lru_cache
 class EnvSettings(BaseSettings):
     console_log: str = "INFO"
 
+    captcha_api_key: str
+    captcha_service: str
+
     @field_validator('console_log')
     def validate_console_log(cls, value):
         value.upper()
@@ -13,6 +16,15 @@ class EnvSettings(BaseSettings):
 
         if value not in valid_types:
             raise ValueError(f"Invalid console log type message: '{value}'. Must be one of: {', '.join(valid_types)}")
+        return value
+
+    @field_validator('captcha_service')
+    def validate_captcha_service(cls, value):
+        valid_services = ["ANTI_CAPTCHA", "AZCAPTCHA", "CAPTCHA_GURU", "CPTCH_NET", "DEATHBYCAPTCHA", "RUCAPTCHA",
+                          "TWOCAPTCHA", "MULTIBOT_CAPTCHA", "SCTG_CAPTCHA", "CAPMONSTER", "CAPSOLVER"]
+
+        if value not in valid_services:
+            raise ValueError(f"Invalid captcha service: '{value}'. Must be one of: {', '.join(valid_services)}")
         return value
 
 
@@ -23,7 +35,8 @@ class EnvSettings(BaseSettings):
 
 
 class AppSettings(BaseSettings):
-    pass
+    captcha_website_url: str = "https://www.zenchain.io"
+    captcha_website_key: str = "6Ld0snEqAAAAAN0MMJw_ZLHD6QEhjy94pojsgH9G"
 
 
 

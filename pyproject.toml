@@ -17,6 +17,9 @@ eth-account = "^0.13.4"
 aiosqlite = "^0.20.0"
 alembic = "^1.14.0"
 browserforge = {extras = ["all"], version = "^1.1.2"}
+httpx = {extras = ["brotli"], version = "^0.28.0"}
+better-proxy = "^1.2.0"
+brotli = "^1.1.0"
 
 
 [build-system]

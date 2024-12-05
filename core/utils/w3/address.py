@@ -22,5 +22,5 @@ def get_address_from_private_key(private_key: str) -> str:
 
         return address
     except Exception as e:
-        xlogger.error(f"Error extracting address from private key: {str(e)}")
+        xlogger.debug(f"Error extracting address from private key: {str(e)}")
         return None
