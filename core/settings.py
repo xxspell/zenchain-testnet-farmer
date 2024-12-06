@@ -35,8 +35,10 @@ class EnvSettings(BaseSettings):
 
 
 class AppSettings(BaseSettings):
-    captcha_website_url: str = "https://www.zenchain.io"
-    captcha_website_key: str = "6Ld0snEqAAAAAN0MMJw_ZLHD6QEhjy94pojsgH9G"
+    captcha_website_url_waitlist: str = "https://www.zenchain.io"
+    captcha_website_url_faucet: str = "https://faucet.zenchain.io"
+    captcha_website_key_waitlist: str = "6Ld0snEqAAAAAN0MMJw_ZLHD6QEhjy94pojsgH9G"
+    captcha_website_key_faucet: str = "6LdMHhUqAAAAADFN5eiFL2503Mn6HDJC6RRMh8NM"
 
 
 

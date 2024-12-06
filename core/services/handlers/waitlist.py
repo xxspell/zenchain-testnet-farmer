@@ -5,8 +5,9 @@ from typing import Dict, Any
 import httpx
 
 from core.database.models import Account, Action
-from core.services.captcha import solve_recaptcha
+from core.services.captcha import solve_recaptcha_v2
 from core.services.handlers.base import BaseActionHandler
+from core.settings import settings
 from core.utils.log import xlogger
 
 
@@ -31,7 +32,7 @@ class WaitlistActionHandler(BaseActionHandler):
             cls.update_client_headers(client, additional_headers)
 
             user_agent = cls.get_client_header(client, "User-Agent")
-            recaptcha_token = await solve_recaptcha(user_agent)
+            recaptcha_token = await solve_recaptcha_v2(user_agent, settings.app.captcha_website_key_waitlist, settings.app.captcha_website_url_waitlist, False)
             message = None
             for attempt in range(1, cls.MAX_RETRIES + 1):
                 try:
@@ -56,8 +57,8 @@ class WaitlistActionHandler(BaseActionHandler):
 
                     else:
                         return {
-                            'status': 'false',
-                            'message': str(response.status_code) + "|" + str(message)
+                            'status': 'failed',
+                            'message': f"HTTP {response.status_code}: {message}"
                         }
 
 
