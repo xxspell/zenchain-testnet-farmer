@@ -2,7 +2,7 @@ import asyncio
 import os
 import sys
 
-
+from core.jobs import main_loop
 from core.services.account_create import create_accounts, print_account_creation_report
 from core.utils.art import ascii_art
 
@@ -37,7 +37,7 @@ def create_accounts_interactive(account_data_file: str = None, proxy_file: str =
 
 def start_farming():
     try:
-        print("Soon")
+        asyncio.run(main_loop())
     except Exception as e:
         print(f"An error occurred during export: {str(e)}")
         return False

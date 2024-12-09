@@ -44,12 +44,12 @@ class WaitlistActionHandler(BaseActionHandler):
                             'recaptchaToken': recaptcha_token
                         }
                     )
-                    print(response.text)
                     result = response.json()
 
                     message = result.get('message')
 
                     if "Successfully added to waitlist" in message:
+                        xlogger.info(f"Success execute waitlist")
                         return {
                             'status': 'success',
                             'message': message

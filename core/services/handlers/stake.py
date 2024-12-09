@@ -1,3 +1,4 @@
+import random
 import traceback
 from typing import Dict, Any
 
@@ -25,13 +26,14 @@ class StakeActionHandler(BaseActionHandler):
                 private_key=account.private_key,
                 proxy=account.proxy,
             )
-
+            random_perc = random.uniform(40, 77)
             result = await staker.precise_stake(
-                stake_amount='60%',
+                stake_amount=f'{random_perc}%',
                 reward_destination=0
             )
 
             if result and result.get('status') == 1:
+                xlogger.info(f"Success execute stake. TX: {result.get('transactionHash', '').hex()}")
                 return {
                     'status': 'success',
                     'transaction_hash': result.get('transactionHash', '').hex(),

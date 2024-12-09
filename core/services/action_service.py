@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from sqlalchemy.orm import selectinload
 
+from core.database.connect import AsyncSessionLocal
 from core.database.models import ActionType, Action, ActionStatus, Account
 from core.services.handlers import ActionHandlerRegistry
 from core.settings import settings
@@ -217,54 +218,61 @@ class ActionService:
         semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
         async def process_account(account):
-            async with semaphore:
-                try:
-                    missing_dependencies = await ActionDependencyManager.get_missing_dependencies(
-                        session, account.id, action_type
-                    )
+            async with AsyncSessionLocal() as new_session:
+                xlogger.log_prefix_var.set(f"{action_type}-{account.id} | ")
+                initial_delay = random.uniform(0, max_concurrent_tasks * 10)
+                xlogger.debug(f"Delaying account {account.email} processing by {initial_delay:.2f} seconds")
+                await asyncio.sleep(initial_delay)
+
+                async with semaphore:
+                    try:
+                        missing_dependencies = await ActionDependencyManager.get_missing_dependencies(
+                            new_session, account.id, action_type
+                        )
 
 
-                    for dep_action_type in missing_dependencies:
-                        xlogger.debug(f"Processing missing dependency {dep_action_type} for account {account.email}")
+                        for dep_action_type in missing_dependencies:
+                            xlogger.debug(f"Processing missing dependency {dep_action_type} for account {account.email}")
 
-                        try:
-                            dep_action = await cls.create_action(
-                                session=session,
-                                account_id=account.id,
-                                action_type=dep_action_type,
-                            )
-                            delay_env = settings.env.delay_between_dependency_executions
-                            delay = random.uniform(delay_env[0], delay_env[1])
-                            xlogger.debug(f"Waiting {delay:.2f} seconds before {dep_action_type}")
-                            await asyncio.sleep(delay)
+                            try:
+                                dep_action = await cls.create_action(
+                                    session=new_session,
+                                    account_id=account.id,
+                                    action_type=dep_action_type,
+                                )
+                                delay_env = settings.env.delay_between_dependency_executions
+                                delay = random.uniform(delay_env[0], delay_env[1])
+                                xlogger.debug(f"Waiting {delay:.2f} seconds before {dep_action_type}")
+                                await asyncio.sleep(delay)
 
-                            result = await cls.execute_action(session, account, dep_action)
+                                result = await cls.execute_action(new_session, account, dep_action)
 
-                            if result.get('status') != 'success':
-                                xlogger.warning(f"Dependency {dep_action_type} failed: {result}")
-                                return {account.email: result}
+                                if result.get('status') != 'success':
+                                    xlogger.warning(f"Dependency {dep_action_type} failed: {result}")
+                                    return {account.email: result}
 
-                        except Exception as e:
-                            xlogger.error(f"Error processing dependency {dep_action_type}: {e}")
-                            return {account.email: {"status": "failed", "error": str(e)}}
+                            except Exception as e:
+                                xlogger.error(f"Error processing dependency {dep_action_type}: {e}")
+                                return {account.email: {"status": "failed", "error": str(e)}}
 
-                    action = await cls.create_action(
-                        session=session,
-                        account_id=account.id,
-                        action_type=action_type,
-                    )
+                        action = await cls.create_action(
+                            session=new_session,
+                            account_id=account.id,
+                            action_type=action_type,
+                        )
 
-                    delay_env = settings.env.delay_between_dependency_executions
-                    delay = random.uniform(delay_env[0], delay_env[1])
-                    xlogger.debug(f"Waiting {delay:.2f} seconds before main action {action_type}")
-                    await asyncio.sleep(delay)
+                        delay_env = settings.env.delay_between_dependency_executions
+                        delay = random.uniform(delay_env[0], delay_env[1])
+                        xlogger.debug(f"Waiting {delay:.2f} seconds before main action {action_type}")
+                        await asyncio.sleep(delay)
 
-                    result = await cls.execute_action(session, account, action)
-                    return {account.email: result}
+                        result = await cls.execute_action(new_session, account, action)
+                        return {account.email: result}
 
-                except Exception as e:
-                    xlogger.error(f"Error processing account {account.email}: {e}")
-                    return {account.email: {"status": "failed", "error": str(e)}}
+                    except Exception as e:
+                        await session.rollback()
+                        xlogger.error(f"Error processing account {account.email}: {e}")
+                        return {account.email: {"status": "failed", "error": str(e)}}
 
         tasks = [process_account(account) for account in accounts]
         results = await asyncio.gather(*tasks, return_exceptions=True)

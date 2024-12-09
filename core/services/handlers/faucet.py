@@ -50,6 +50,7 @@ class FaucetActionHandler(BaseActionHandler):
                     result = response.json()
 
                     if 'hash' in result and 'dripAmount' in result:
+                        xlogger.info(f"Success execute faucet. TX: {result['hash']}. Drip: {result['dripAmount']}")
                         return {
                             'status': 'success',
                             'hash': result['hash'],
