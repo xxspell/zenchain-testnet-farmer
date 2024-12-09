@@ -20,6 +20,7 @@ browserforge = {extras = ["all"], version = "^1.1.2"}
 httpx = {extras = ["brotli"], version = "^0.28.0"}
 better-proxy = "^1.2.0"
 brotli = "^1.1.0"
+eth-abi = "^5.1.0"
 
 
 [build-system]

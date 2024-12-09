@@ -9,6 +9,8 @@ class EnvSettings(BaseSettings):
     captcha_api_key: str
     captcha_service: str
 
+    delay_between_dependency_executions: list = '[10, 15]'
+
     @field_validator('console_log')
     def validate_console_log(cls, value):
         value.upper()

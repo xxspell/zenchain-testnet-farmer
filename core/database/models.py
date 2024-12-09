@@ -19,7 +19,7 @@ class ActionStatus(enum.Enum):
 class ActionType(enum.Enum):
     WAITLIST = "waitlist"
     FAUCET = "faucet"
-    BRIDGE = "bridge"
+    STAKE = "stake"
 
 
 class Account(Base):
