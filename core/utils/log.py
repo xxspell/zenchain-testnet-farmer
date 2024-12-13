@@ -1,6 +1,7 @@
 import contextvars
 import logging
 import sys
+import traceback
 
 from loguru import logger
 
@@ -13,11 +14,22 @@ class InterceptHandler(logging.Handler):
         self.log_prefix_var = log_prefix_var
 
     def emit(self, record):
-        level = logger.level(record.levelname).name if record.levelname in logger._core.levels else record.levelno
-        prefix_log_message = self.log_prefix_var.get()
+        try:
+            level = logger.level(record.levelname).name if record.levelname in logger._core.levels else record.levelno
+            prefix_log_message = self.log_prefix_var.get()
+
+            exc_info = record.exc_info
+            if exc_info and exc_info[0] is not None:
+                traceback_str = ''.join(traceback.format_exception(*exc_info))
+                message = f"{record.getMessage()}\n{traceback_str}"
+            else:
+                message = record.getMessage()
 
 
-        logger.bind(prefix_log_message=prefix_log_message).opt(depth=6, exception=record.exc_info).log(level, record.getMessage())
+            logger.bind(prefix_log_message=prefix_log_message).opt(depth=6, exception=record.exc_info).log(level, message)
+        except Exception as e:
+            print(f"Error in InterceptHandler: {e}")
+            print(record.getMessage())
 
 
 class XLogger:
