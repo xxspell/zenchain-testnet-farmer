@@ -66,10 +66,10 @@ class ZenchainAsyncStaking:
             xlogger.error(f"Error receiving steak: {e}")
             return 0.0
 
-    async def get_dynamic_gas_price(self) -> int:
+    async def get_dynamic_gas_price(self, multiplier = 1) -> int:
         """Getting gas with a little randomness"""
         base_gas_price = await self.w3.eth.gas_price
-        return base_gas_price
+        return base_gas_price * multiplier
 
     async def get_wallet_balance(self) -> float:
         """Getting wallet balance in ETH"""
@@ -86,40 +86,52 @@ class ZenchainAsyncStaking:
             reward_destination: int = 0
     ):
         try:
+            stake_log_message = f"Staking attempt for address {self.address}: "
             wallet_balance = float(await self.get_wallet_balance())
-            xlogger.info(f"Wallet balance: {wallet_balance} ZXC")
+            xlogger.debug(f"Wallet Balance for {self.address}: {wallet_balance} ZXC")
+            stake_log_message += f"Wallet Balance={wallet_balance} ZXC, "
 
             if isinstance(stake_amount, str) and stake_amount.endswith('%'):
                 percent = float(stake_amount.rstrip('%')) / 100
                 calculated_stake = wallet_balance * percent
-                xlogger.info(f"Percentage calculation: {percent * 100}% of {wallet_balance} ZXC")
+                xlogger.debug(
+                    f"Stake Calculation for {self.address}: Percentage={percent * 100}%, Amount={calculated_stake} ZXC")
+                stake_log_message += f"Stake Calculation=Percentage({percent*100}%), "
             else:
                 calculated_stake = float(stake_amount)
+                xlogger.debug(f"Stake Calculation for {self.address}: Fixed Amount={calculated_stake} ZXC")
+                stake_log_message += f"Stake Calculation=Fixed Amount, "
 
             current_stake = await self.get_current_stake()
+            xlogger.debug(f"Current Stake for {self.address}: {current_stake} ZXC")
+
             stake_amount_final = calculated_stake
             stake_amount_wei = int(Web3.to_wei(stake_amount_final, 'ether'))
-            gas_price = await self.get_dynamic_gas_price()
+            gas_price = await self.get_dynamic_gas_price(2)
+            xlogger.debug(f"Stake Preparation for {self.address}: Amount={stake_amount_final} ZXC, Gas Price={gas_price}")
+            stake_log_message += f"Stake Amount={stake_amount_final} ZXC, Gas Price={gas_price}"
 
             if current_stake == 0:
-                xlogger.info(f"Primary staking: {stake_amount_final} ZCX")
+                stake_log_message += ", Method=Primary Staking"
+                xlogger.debug(f"Staking Method for {self.address}: Primary Staking")
                 tx = await self.contract.functions.bond(
                     stake_amount_wei,
                     reward_destination
                 ).build_transaction({
                     'from': self.address,
                     'nonce': await self.w3.eth.get_transaction_count(self.address),
-                    'gas': 500000,
+                    'gas': 1000000,
                     'gasPrice': gas_price
                 })
             else:
-                xlogger.info(f"Additional stake purchase: {stake_amount_final} ZCX")
+                stake_log_message += ", Method=Additional Staking"
+                xlogger.debug(f"Staking Method for {self.address}: Additional Staking")
                 tx = await self.contract.functions.bondExtra(
                     stake_amount_wei
                 ).build_transaction({
                     'from': self.address,
                     'nonce': await self.w3.eth.get_transaction_count(self.address),
-                    'gas': 500000,
+                    'gas': 1000000,
                     'gasPrice': gas_price
                 })
 
@@ -127,12 +139,18 @@ class ZenchainAsyncStaking:
             tx_hash = await self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             receipt = await self.w3.eth.wait_for_transaction_receipt(tx_hash)
 
-            xlogger.debug(f"Transaction successful. Hash: {tx_hash.hex()}")
+            xlogger.debug(f"Transaction Details for {self.address}: Hash={tx_hash.hex()}")
+            stake_log_message += f", Transaction Hash={tx_hash.hex()}, Status=Success"
+            xlogger.info(stake_log_message)
 
             return receipt
 
         except Exception as e:
-            xlogger.error(f"Staking error: {e}")
+            xlogger.debug(f"Staking Preparation Error for {self.address}: {str(e)}")
+            error_message = f"Staking Error for {self.address}: {str(e)}"
+            xlogger.error(error_message)
+
             import traceback
-            xlogger.error(traceback.format_exc())
+            xlogger.debug(f"Staking Error Traceback for {self.address}:\n{traceback.format_exc()}")
+
             return None

@@ -23,6 +23,8 @@ class FaucetActionHandler(BaseActionHandler):
             client: httpx.AsyncClient
     ) -> Dict[str, Any]:
         try:
+            xlogger.info(f"Starting faucet action for {account.address}")
+            xlogger.debug(f"Client details: {client}, state: {client.is_closed}")
             additional_headers = {
                 "Host": "faucet.zenchain.io",
                 "Origin": "https://faucet.zenchain.io",
@@ -96,6 +98,7 @@ class FaucetActionHandler(BaseActionHandler):
 
 
         except Exception as e:
+            xlogger.error(f"Detailed error: {e}")
             xlogger.error(traceback.format_exc())
             return {
                 'status': 'failed',
