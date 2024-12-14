@@ -166,3 +166,4 @@ test.db
 exports/
 *.csv
 *.txt
+*.zip
